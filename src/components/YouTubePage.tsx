@@ -12,15 +12,27 @@ import { YouTubeVideoItem } from '../types';
 import { getYouTubeVideos } from '../utils/storage';
 
 interface YouTubePageProps {
+  videos?: YouTubeVideoItem[];
   onNotify: (msg: string) => void;
 }
 
-export const YouTubePage: React.FC<YouTubePageProps> = ({ onNotify }) => {
-  const [videos, setVideos] = useState<YouTubeVideoItem[]>(() => getYouTubeVideos());
+export const YouTubePage: React.FC<YouTubePageProps> = ({ videos: propVideos, onNotify }) => {
+  const [internalVideos, setInternalVideos] = useState<YouTubeVideoItem[]>(() => getYouTubeVideos());
 
   useEffect(() => {
-    const handleUpdate = () => {
-      setVideos(getYouTubeVideos());
+    // Initial sync
+    const current = getYouTubeVideos();
+    if (current && current.length > 0) {
+      setInternalVideos(current);
+    }
+
+    const handleUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<YouTubeVideoItem[]>;
+      if (customEvent.detail && Array.isArray(customEvent.detail)) {
+        setInternalVideos(customEvent.detail);
+      } else {
+        setInternalVideos(getYouTubeVideos());
+      }
     };
     window.addEventListener('ding_youtube_videos_updated', handleUpdate);
     window.addEventListener('storage', handleUpdate);
@@ -29,6 +41,8 @@ export const YouTubePage: React.FC<YouTubePageProps> = ({ onNotify }) => {
       window.removeEventListener('storage', handleUpdate);
     };
   }, []);
+
+  const videos = propVideos || internalVideos;
 
   const handleOpenVideo = (video: YouTubeVideoItem) => {
     const targetUrl = video.url || 'https://www.youtube.com/@dingwitch7/videos';
@@ -84,7 +98,7 @@ export const YouTubePage: React.FC<YouTubePageProps> = ({ onNotify }) => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
           {videos.map((video, index) => (
             <motion.article
-              key={video.id}
+              key={`${video.id}-${index}`}
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.05 }}
@@ -97,6 +111,9 @@ export const YouTubePage: React.FC<YouTubePageProps> = ({ onNotify }) => {
                   src={video.thumbnail}
                   alt={video.title}
                   referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80';
+                  }}
                   className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
                 <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/30 transition-colors duration-300" />

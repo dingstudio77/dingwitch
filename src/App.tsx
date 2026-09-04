@@ -21,11 +21,32 @@ import { FreeResourcePage } from './components/FreeResourcePage';
 import { AdminPage } from './components/AdminPage';
 import { Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { YouTubeVideoItem } from './types';
+import { getYouTubeVideos } from './utils/storage';
 
 export default function App() {
   const [activePage, setActivePage] = useState<string>('home');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [ebookResetKey, setEbookResetKey] = useState<number>(0);
+  const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideoItem[]>(() => getYouTubeVideos());
+
+  React.useEffect(() => {
+    const handleYouTubeUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<YouTubeVideoItem[]>;
+      if (customEvent.detail && Array.isArray(customEvent.detail)) {
+        setYoutubeVideos(customEvent.detail);
+      } else {
+        setYoutubeVideos(getYouTubeVideos());
+      }
+    };
+
+    window.addEventListener('ding_youtube_videos_updated', handleYouTubeUpdate);
+    window.addEventListener('storage', handleYouTubeUpdate);
+    return () => {
+      window.removeEventListener('ding_youtube_videos_updated', handleYouTubeUpdate);
+      window.removeEventListener('storage', handleYouTubeUpdate);
+    };
+  }, []);
 
   React.useEffect(() => {
     const handleHash = () => {
@@ -139,7 +160,12 @@ export default function App() {
                 <ReviewSection onNotify={showToast} />
 
                 {/* YOUTUBE / YouTube Videos */}
-                <YouTubeSection onNotify={showToast} onNavigate={handleNavigate} />
+                <YouTubeSection 
+                  videos={youtubeVideos.slice(0, 6)}
+                  totalVideoCount={youtubeVideos.length}
+                  onNotify={showToast} 
+                  onNavigate={handleNavigate} 
+                />
 
                 {/* NEWSLETTER / Weekly Design Insights */}
                 <NewsletterSection onNotify={showToast} />
@@ -168,6 +194,7 @@ export default function App() {
 
             {activePage === 'youtube' && (
               <YouTubePage 
+                videos={youtubeVideos}
                 onNotify={showToast} 
               />
             )}
@@ -194,6 +221,7 @@ export default function App() {
               <AdminPage 
                 onNotify={showToast} 
                 onNavigateHome={() => handleNavigate('home')} 
+                onNavigatePage={handleNavigate}
               />
             )}
           </motion.div>

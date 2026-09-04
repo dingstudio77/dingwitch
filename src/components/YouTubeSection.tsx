@@ -1,27 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { Youtube, Play, ArrowUpRight } from 'lucide-react';
+import { Youtube, Play, ArrowUpRight, Clock, Eye } from 'lucide-react';
 import { motion } from 'motion/react';
 import { YouTubeVideoItem } from '../types';
 import { getYouTubeVideos } from '../utils/storage';
 
 interface YouTubeSectionProps {
+  videos?: YouTubeVideoItem[];
+  totalVideoCount?: number;
   onNotify?: (msg: string) => void;
   onNavigate?: (page: string) => void;
 }
 
-export const YouTubeSection: React.FC<YouTubeSectionProps> = ({ onNotify, onNavigate }) => {
-  const [videos, setVideos] = useState<YouTubeVideoItem[]>(() => getYouTubeVideos().slice(0, 6));
+export const YouTubeSection: React.FC<YouTubeSectionProps> = ({ 
+  videos: propVideos, 
+  totalVideoCount: propTotalCount,
+  onNotify, 
+  onNavigate 
+}) => {
+  const [internalVideos, setInternalVideos] = useState<YouTubeVideoItem[]>(() => getYouTubeVideos());
 
   useEffect(() => {
-    // Initial load from storage
+    // Initial sync
     const current = getYouTubeVideos();
     if (current && current.length > 0) {
-      setVideos(current.slice(0, 6));
+      setInternalVideos(current);
     }
 
-    const handleUpdate = () => {
-      const updated = getYouTubeVideos();
-      setVideos(updated.slice(0, 6));
+    const handleUpdate = (e: Event) => {
+      const customEvent = e as CustomEvent<YouTubeVideoItem[]>;
+      if (customEvent.detail && Array.isArray(customEvent.detail)) {
+        setInternalVideos(customEvent.detail);
+      } else {
+        setInternalVideos(getYouTubeVideos());
+      }
     };
 
     window.addEventListener('ding_youtube_videos_updated', handleUpdate);
@@ -32,6 +43,10 @@ export const YouTubeSection: React.FC<YouTubeSectionProps> = ({ onNotify, onNavi
       window.removeEventListener('storage', handleUpdate);
     };
   }, []);
+
+  const allVideos = propVideos || internalVideos;
+  const displayVideos = allVideos.slice(0, 6);
+  const totalCount = propTotalCount !== undefined ? propTotalCount : allVideos.length;
 
   const handleVideoClick = (video: YouTubeVideoItem) => {
     const targetUrl = video.url || 'https://www.youtube.com/@dingwitch7/videos';
@@ -73,7 +88,7 @@ export const YouTubeSection: React.FC<YouTubeSectionProps> = ({ onNotify, onNavi
                 onClick={() => onNavigate('youtube')}
                 className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold transition-colors cursor-pointer"
               >
-                <span>영상 전체보기 (12편)</span>
+                <span>영상 전체보기 ({totalCount}편)</span>
                 <span>→</span>
               </motion.button>
             )}
@@ -95,9 +110,9 @@ export const YouTubeSection: React.FC<YouTubeSectionProps> = ({ onNotify, onNavi
 
         {/* 6 Video Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-          {videos.map((video, index) => (
+          {displayVideos.map((video, index) => (
             <motion.div
-              key={video.id || index}
+              key={`${video.id}-${index}`}
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               viewport={{ once: true, margin: '-40px' }}
@@ -121,6 +136,21 @@ export const YouTubeSection: React.FC<YouTubeSectionProps> = ({ onNotify, onNavi
                 {/* Dark Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity" />
 
+                {/* Tag Badge Top Left */}
+                {video.tag && (
+                  <span className="absolute top-2.5 left-2.5 px-2.5 py-1 bg-white/95 backdrop-blur-xs text-[#580096] text-[11px] font-bold rounded-md shadow-xs z-10">
+                    {video.tag}
+                  </span>
+                )}
+
+                {/* Duration Badge Bottom Right */}
+                {video.duration && (
+                  <span className="absolute bottom-2.5 right-2.5 px-2 py-0.5 bg-slate-950/80 backdrop-blur-xs text-white text-[11px] font-bold rounded-md flex items-center gap-1 z-10">
+                    <Clock className="w-3 h-3 text-slate-300" />
+                    <span>{video.duration}</span>
+                  </span>
+                )}
+
                 {/* Play Button Icon on Hover */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-red-600 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
@@ -129,11 +159,29 @@ export const YouTubeSection: React.FC<YouTubeSectionProps> = ({ onNotify, onNavi
                 </div>
               </div>
 
-              {/* Video Info Body - Title only */}
-              <div className="p-4 sm:p-5 flex-1 flex flex-col justify-center bg-white">
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 line-clamp-2 leading-snug group-hover:text-red-600 transition-colors">
+              {/* Video Info Body */}
+              <div className="p-4 sm:p-5 flex-1 flex flex-col justify-between bg-white">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 line-clamp-2 leading-snug group-hover:text-red-600 transition-colors mb-3">
                   {video.title}
                 </h3>
+
+                {/* Meta details: views and publishedAt */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <div className="flex items-center gap-2">
+                    {video.views && (
+                      <span className="flex items-center gap-1">
+                        <Eye className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{video.views}</span>
+                      </span>
+                    )}
+                    {video.publishedAt && (
+                      <span className="text-slate-400">· {video.publishedAt}</span>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-semibold text-red-600 group-hover:translate-x-0.5 transition-transform">
+                    보러가기 →
+                  </span>
+                </div>
               </div>
             </motion.div>
           ))}

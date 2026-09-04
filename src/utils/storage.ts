@@ -249,19 +249,8 @@ export function getYouTubeVideos(): YouTubeVideoItem[] {
       return INITIAL_YOUTUBE_VIDEOS;
     }
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length >= 12) {
-      return parsed;
-    }
     if (Array.isArray(parsed) && parsed.length > 0) {
-      // Merge missing initial videos to ensure at least 12 videos are available
-      const merged = [...parsed];
-      for (const initVid of INITIAL_YOUTUBE_VIDEOS) {
-        if (!merged.some((m) => m.id === initVid.id)) {
-          merged.push(initVid);
-        }
-      }
-      localStorage.setItem(YOUTUBE_VIDEOS_KEY, JSON.stringify(merged));
-      return merged;
+      return parsed;
     }
     return INITIAL_YOUTUBE_VIDEOS;
   } catch (e) {

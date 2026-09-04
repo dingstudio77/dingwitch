@@ -66,9 +66,10 @@ import { ThumbnailUploader } from './ThumbnailUploader';
 interface AdminPageProps {
   onNotify: (msg: string) => void;
   onNavigateHome: () => void;
+  onNavigatePage?: (page: string) => void;
 }
 
-export const AdminPage: React.FC<AdminPageProps> = ({ onNotify, onNavigateHome }) => {
+export const AdminPage: React.FC<AdminPageProps> = ({ onNotify, onNavigateHome, onNavigatePage }) => {
   // Navigation tabs
   const [activeTab, setActiveTab] = useState<'registrations' | 'inquiries' | 'youtube'>('registrations');
 
@@ -1355,14 +1356,36 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNotify, onNavigateHome }
                   <span>실시간 메인 섹션 연동</span>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                  <span>유튜브 추천 영상 6선 관리</span>
+                  <span>유튜브 영상 관리 ({youtubeVideos.length}개)</span>
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600 max-w-2xl leading-relaxed">
-                  메인 홈페이지 유튜브 섹션에 표시될 영상의 <strong>썸네일 이미지, 영상 재생 링크, 제목, 카테고리 태그</strong>를 등록하고 관리합니다. 상위 6개 영상이 홈페이지에 실시간으로 반영됩니다.
+                  메인 홈페이지 유튜브 섹션 및 유튜브 전용 메뉴에 노출될 영상의 <strong>썸네일 이미지, 영상 링크, 제목, 카테고리 태그</strong>를 관리합니다. 수정 시 메인화면과 유튜브 메뉴에 즉시 실시간 반영됩니다.
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+                {onNavigatePage && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => onNavigatePage('home')}
+                      className="px-3.5 py-2.5 rounded-xl bg-purple-50 hover:bg-purple-100 text-[#580096] text-xs font-bold border border-purple-200 transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="홈 화면 유튜브 섹션 확인"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>메인화면 확인</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onNavigatePage('youtube')}
+                      className="px-3.5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
+                      title="유튜브 메뉴 페이지 확인"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      <span>유튜브 메뉴 확인</span>
+                    </button>
+                  </>
+                )}
                 <button
                   type="button"
                   onClick={handleResetYouTubeData}
