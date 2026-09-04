@@ -143,8 +143,28 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNotify, onNavigateHome, 
         setInquiries(getInquiries());
       }
     };
+    const handleRegistrationsUpdated = (e: any) => {
+      if (e.detail) {
+        setRegistrations(e.detail);
+      } else {
+        setRegistrations(getPreRegistrations());
+      }
+    };
+    const handleYouTubeUpdated = (e: any) => {
+      if (e.detail) {
+        setYoutubeVideos(e.detail);
+      } else {
+        setYoutubeVideos(getYouTubeVideos());
+      }
+    };
     window.addEventListener('ding_inquiries_updated', handleInquiriesUpdated);
-    return () => window.removeEventListener('ding_inquiries_updated', handleInquiriesUpdated);
+    window.addEventListener('ding_registrations_updated', handleRegistrationsUpdated);
+    window.addEventListener('ding_youtube_videos_updated', handleYouTubeUpdated);
+    return () => {
+      window.removeEventListener('ding_inquiries_updated', handleInquiriesUpdated);
+      window.removeEventListener('ding_registrations_updated', handleRegistrationsUpdated);
+      window.removeEventListener('ding_youtube_videos_updated', handleYouTubeUpdated);
+    };
   }, []);
 
   const loadData = () => {
@@ -1351,9 +1371,15 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNotify, onNavigateHome, 
             {/* Header Banner & Stats */}
             <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
               <div className="space-y-1">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-bold">
-                  <Youtube className="w-3.5 h-3.5 text-red-600" />
-                  <span>실시간 메인 섹션 연동</span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-200 text-red-700 text-xs font-bold">
+                    <Youtube className="w-3.5 h-3.5 text-red-600" />
+                    <span>실시간 메인 섹션 연동</span>
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>클라우드 DB 연동 (배포 후 영구 보존)</span>
+                  </div>
                 </div>
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                   <span>유튜브 영상 관리 ({youtubeVideos.length}개)</span>

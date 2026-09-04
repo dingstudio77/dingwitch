@@ -1,5 +1,6 @@
 import { PreRegistrationItem, PreRegStatus, YouTubeVideoItem, CollaborationInquiryItem, InquiryCategory } from '../types';
 import { INITIAL_YOUTUBE_VIDEOS } from '../data/mockData';
+import { saveYouTubeVideosToCloud, savePreRegistrationsToCloud, saveInquiriesToCloud } from './firebaseSync';
 
 const PRE_REG_KEY = 'ding_pre_registrations_v1';
 const ADMIN_PASSWORD_KEY = 'ding_admin_password_v1';
@@ -123,6 +124,8 @@ export function savePreRegistration(data: {
   const updatedList = [newItem, ...currentList];
   if (typeof window !== 'undefined') {
     localStorage.setItem(PRE_REG_KEY, JSON.stringify(updatedList));
+    window.dispatchEvent(new CustomEvent('ding_registrations_updated', { detail: updatedList }));
+    savePreRegistrationsToCloud(updatedList).catch(err => console.warn('Cloud save pre-reg warning:', err));
   }
   return newItem;
 }
@@ -137,6 +140,8 @@ export function updatePreRegistration(id: string, updates: Partial<PreRegistrati
   });
   if (typeof window !== 'undefined') {
     localStorage.setItem(PRE_REG_KEY, JSON.stringify(updatedList));
+    window.dispatchEvent(new CustomEvent('ding_registrations_updated', { detail: updatedList }));
+    savePreRegistrationsToCloud(updatedList).catch(err => console.warn('Cloud save pre-reg warning:', err));
   }
   return updatedList;
 }
@@ -146,6 +151,8 @@ export function deletePreRegistration(id: string): PreRegistrationItem[] {
   const updatedList = currentList.filter(item => item.id !== id);
   if (typeof window !== 'undefined') {
     localStorage.setItem(PRE_REG_KEY, JSON.stringify(updatedList));
+    window.dispatchEvent(new CustomEvent('ding_registrations_updated', { detail: updatedList }));
+    savePreRegistrationsToCloud(updatedList).catch(err => console.warn('Cloud save pre-reg warning:', err));
   }
   return updatedList;
 }
@@ -153,6 +160,8 @@ export function deletePreRegistration(id: string): PreRegistrationItem[] {
 export function resetPreRegistrations(): PreRegistrationItem[] {
   if (typeof window !== 'undefined') {
     localStorage.setItem(PRE_REG_KEY, JSON.stringify(INITIAL_SAMPLE_DATA));
+    window.dispatchEvent(new CustomEvent('ding_registrations_updated', { detail: INITIAL_SAMPLE_DATA }));
+    savePreRegistrationsToCloud(INITIAL_SAMPLE_DATA).catch(err => console.warn('Cloud save pre-reg warning:', err));
   }
   return INITIAL_SAMPLE_DATA;
 }
@@ -263,6 +272,7 @@ export function saveYouTubeVideos(videos: YouTubeVideoItem[]): YouTubeVideoItem[
   if (typeof window !== 'undefined') {
     localStorage.setItem(YOUTUBE_VIDEOS_KEY, JSON.stringify(videos));
     window.dispatchEvent(new CustomEvent('ding_youtube_videos_updated', { detail: videos }));
+    saveYouTubeVideosToCloud(videos).catch(err => console.warn('Cloud save youtube warning:', err));
   }
   return videos;
 }
@@ -389,6 +399,7 @@ export function saveInquiry(data: {
   if (typeof window !== 'undefined') {
     localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updatedList));
     window.dispatchEvent(new CustomEvent('ding_inquiries_updated', { detail: updatedList }));
+    saveInquiriesToCloud(updatedList).catch(err => console.warn('Cloud save inquiries warning:', err));
   }
   return newItem;
 }
@@ -404,6 +415,7 @@ export function updateInquiry(id: string, updates: Partial<CollaborationInquiryI
   if (typeof window !== 'undefined') {
     localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updatedList));
     window.dispatchEvent(new CustomEvent('ding_inquiries_updated', { detail: updatedList }));
+    saveInquiriesToCloud(updatedList).catch(err => console.warn('Cloud save inquiries warning:', err));
   }
   return updatedList;
 }
@@ -414,6 +426,7 @@ export function deleteInquiry(id: string): CollaborationInquiryItem[] {
   if (typeof window !== 'undefined') {
     localStorage.setItem(INQUIRIES_KEY, JSON.stringify(updatedList));
     window.dispatchEvent(new CustomEvent('ding_inquiries_updated', { detail: updatedList }));
+    saveInquiriesToCloud(updatedList).catch(err => console.warn('Cloud save inquiries warning:', err));
   }
   return updatedList;
 }
@@ -422,6 +435,7 @@ export function resetInquiries(): CollaborationInquiryItem[] {
   if (typeof window !== 'undefined') {
     localStorage.setItem(INQUIRIES_KEY, JSON.stringify(INITIAL_INQUIRIES_SAMPLE));
     window.dispatchEvent(new CustomEvent('ding_inquiries_updated', { detail: INITIAL_INQUIRIES_SAMPLE }));
+    saveInquiriesToCloud(INITIAL_INQUIRIES_SAMPLE).catch(err => console.warn('Cloud save inquiries warning:', err));
   }
   return INITIAL_INQUIRIES_SAMPLE;
 }

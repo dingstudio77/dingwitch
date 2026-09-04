@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Site settings & YouTube curated videos
+    match /site_settings/{settingId} {
+      allow read, write: if true;
+    }
+    match /youtube_videos/{videoId} {
+      allow read, write: if true;
+    }
+    // Pre-registrations for courses
+    match /pre_registrations/{registrationId} {
+      allow read, write: if true;
+    }
+    // Customer inquiries
+    match /inquiries/{inquiryId} {
+      allow read, write: if true;
+    }
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Ding Studio Firebase Blueprint",
+  "entities": {
+    "YouTubeVideo": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "thumbnail": { "type": "string" },
+        "url": { "type": "string" },
+        "publishedAt": { "type": "string" },
+        "views": { "type": "string" },
+        "duration": { "type": "string" },
+        "tag": { "type": "string" },
+        "order": { "type": "number" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["id", "title", "thumbnail", "url"]
+    },
+    "SiteSettings": {
+      "type": "object",
+      "properties": {
+        "key": { "type": "string" },
+        "value": { "type": "array" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["key"]
+    },
+    "PreRegistration": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderNumber": { "type": "number" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "targetCourse": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "status": { "type": "string" },
+        "adminNote": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "phone", "targetCourse", "createdAt", "status"]
+    },
+    "CollaborationInquiry": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "orderNumber": { "type": "number" },
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "category": { "type": "string" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "status": { "type": "string" },
+        "adminNote": { "type": "string" }
+      },
+      "required": ["id", "name", "phone", "email", "category", "message", "createdAt", "status"]
+    }
+  },
+  "firestore": {
+    "/youtube_videos/{videoId}": {
+      "schema": "YouTubeVideo",
+      "description": "Curated YouTube videos displayed on main and youtube pages"
+    },
+    "/site_settings/{settingId}": {
+      "schema": "SiteSettings",
+      "description": "General site settings and video collection list"
+    },
+    "/pre_registrations/{registrationId}": {
+      "schema": "PreRegistration",
+      "description": "Course pre-registration applications"
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": "CollaborationInquiry",
+      "description": "User inquiries and contact submissions"
+    }
+  }
+}

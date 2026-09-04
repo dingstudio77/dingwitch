@@ -23,6 +23,11 @@ import { Sparkles, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { YouTubeVideoItem } from './types';
 import { getYouTubeVideos } from './utils/storage';
+import { 
+  initYouTubeFirebaseSync, 
+  initPreRegistrationsFirebaseSync, 
+  initInquiriesFirebaseSync 
+} from './utils/firebaseSync';
 
 export default function App() {
   const [activePage, setActivePage] = useState<string>('home');
@@ -31,6 +36,14 @@ export default function App() {
   const [youtubeVideos, setYoutubeVideos] = useState<YouTubeVideoItem[]>(() => getYouTubeVideos());
 
   React.useEffect(() => {
+    // 1. Initialize Firebase Cloud Database Real-time Listeners
+    const unsubYouTube = initYouTubeFirebaseSync((updated) => {
+      setYoutubeVideos(updated);
+    });
+    const unsubPreReg = initPreRegistrationsFirebaseSync();
+    const unsubInq = initInquiriesFirebaseSync();
+
+    // 2. Local update listeners
     const handleYouTubeUpdate = (e: Event) => {
       const customEvent = e as CustomEvent<YouTubeVideoItem[]>;
       if (customEvent.detail && Array.isArray(customEvent.detail)) {
@@ -43,6 +56,9 @@ export default function App() {
     window.addEventListener('ding_youtube_videos_updated', handleYouTubeUpdate);
     window.addEventListener('storage', handleYouTubeUpdate);
     return () => {
+      unsubYouTube();
+      unsubPreReg();
+      unsubInq();
       window.removeEventListener('ding_youtube_videos_updated', handleYouTubeUpdate);
       window.removeEventListener('storage', handleYouTubeUpdate);
     };
