@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 380" width="100%" height="100%" fill="none">
+  
+  <defs>
+    <style>
+      @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+      .sub-text {
+        font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        font-weight: 500;
+        font-size: 52px;
+        letter-spacing: -0.01em;
+      }
+    </style>
+  </defs>
+
+  <!-- Orbit Ring Ellipse -->
+  <g transform="translate(380, 190) rotate(-16.5) translate(-380, -190)">
+    <ellipse cx="380" cy="190" rx="310" ry="110" stroke="#FFFFFF" stroke-width="2.6" />
+  </g>
+
+  <!-- 4-point Sparkle Star (Top Right) -->
+  <path d="M592 108 C592 118 600 122 608 122 C600 122 592 126 592 136 C592 126 584 122 576 122 C584 122 592 118 592 108 Z" fill="#FFFFFF" />
+
+  <!-- Top Text: 딩마녀의 -->
+  <text x="375" y="152" text-anchor="middle" fill="#FFFFFF" class="sub-text">딩마녀의</text>
+
+  <!-- Main Headline Custom Vector Glyphs: 디자인클래스 -->
+  <g fill="#FFFFFF">
+    <!-- 디 -->
+    <!-- ㄷ: Top Bar with Serifs -->
+    <path d="M 104 194 L 166 194 L 166 207 L 157 207 L 157 202 L 118 202 L 118 244 L 158 244 L 158 238 L 166 238 L 166 252 L 104 252 Z" />
+    <!-- ㅣ: Thick Vertical Stem with Head/Foot Serifs -->
+    <path d="M 174 194 L 202 194 L 202 252 L 174 252 Z" />
+
+    <!-- 자 -->
+    <!-- ㅈ: Top Bar & Curves -->
+    <path d="M 215 194 L 274 194 L 274 204 L 265 204 L 265 200 L 227 200 L 227 204 L 215 204 Z" />
+    <path d="M 243 200 C 243 218 232 238 214 252 L 225 252 C 242 238 251 219 252 200 Z" />
+    <path d="M 244 218 L 264 252 L 276 252 L 253 214 Z" />
+    <!-- ㅏ: Crossbar & Pillar -->
+    <rect x="274" y="219" width="16" height="8" />
+    <path d="M 288 194 L 316 194 L 316 252 L 288 252 Z" />
+
+    <!-- 인 -->
+    <!-- ㅇ: High Contrast Oval -->
+    <path fill-rule="evenodd" d="M 358 193 C 374 193 384 203 384 218 C 384 233 374 243 358 243 C 342 243 332 233 332 218 C 332 203 342 193 358 193 Z M 358 200 C 349 200 344 208 344 218 C 344 228 349 236 358 236 C 367 236 372 228 372 218 C 372 208 367 200 358 200 Z" />
+    <!-- ㅣ: Thick Vertical Pillar -->
+    <path d="M 393 194 L 421 194 L 421 234 L 393 234 Z" />
+    <!-- ㄴ: Base Horizontal Bar -->
+    <path d="M 334 245 L 421 245 L 421 252 L 334 252 Z" />
+
+    <!-- 클 -->
+    <!-- ㅋ: Top Bar, Mid Tick, Left Stem -->
+    <path d="M 436 194 L 490 194 L 490 205 L 448 205 L 448 214 L 484 214 L 484 223 L 448 223 L 448 230 L 490 230 L 490 239 L 436 239 Z" />
+    <!-- ㅡ: Mid Separator -->
+    <rect x="436" y="243" width="54" height="4" />
+    <!-- ㄹ: Base ㄹ -->
+    <path d="M 440 248 L 486 248 L 486 256 L 440 256 Z" />
+
+    <!-- 래 -->
+    <!-- ㄹ: Upper ㄹ -->
+    <path d="M 502 194 L 546 194 L 546 202 L 514 202 L 514 210 L 546 210 L 546 226 L 502 226 L 502 218 L 534 218 L 534 216 L 502 216 Z" />
+    <!-- ㅡ / Base Under ㄹ -->
+    <rect x="502" y="230" width="44" height="4" />
+    <!-- ㅐ: Two Heavy Vertical Pillars with Crossbar -->
+    <path d="M 552 194 L 576 194 L 576 252 L 552 252 Z" />
+    <rect x="576" y="219" width="10" height="7" />
+    <path d="M 586 194 L 610 194 L 610 252 L 586 252 Z" />
+
+    <!-- 스 (Distinctive design with ball terminal on left leg & baseline bar!) -->
+    <!-- ㅅ: Left curved leg with circular ball terminal -->
+    <path d="M 648 194 C 648 212 638 226 626 235 C 623 233 618 231 614 231 C 606 231 600 237 600 244 C 600 252 607 257 615 257 C 622 257 628 252 630 245 C 642 235 654 218 656 194 Z" />
+    <!-- ㅅ: Right thick slanted leg -->
+    <path d="M 644 212 L 672 248 C 674 251 678 252 682 252 L 688 252 L 658 206 Z" />
+    <!-- ㅡ: Distinctive solid underline baseline -->
+    <rect x="602" y="260" width="86" height="5" />
+  </g>
+</svg>

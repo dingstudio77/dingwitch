@@ -1,0 +1,8 @@
+{
+  "name": "딩마녀 홈페이지",
+  "description": "디자이너 인플루언서 딩마녀의 크리에이티브 디자인 스튜디오 \u0026 클래스. 로고 디자인, 웹사이트 제작, 실전 디자인 강의.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
