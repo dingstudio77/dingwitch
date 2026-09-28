@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Youtube, Play, ArrowUpRight, Clock, Eye } from 'lucide-react';
+import { Youtube, Play, ArrowUpRight, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { YouTubeVideoItem } from '../types';
 import { getYouTubeVideos } from '../utils/storage';
@@ -154,19 +154,8 @@ export const YouTubeSection: React.FC<YouTubeSectionProps> = ({
                   {video.title}
                 </h3>
 
-                {/* Meta details: views and publishedAt */}
-                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                  <div className="flex items-center gap-2">
-                    {video.views && (
-                      <span className="flex items-center gap-1">
-                        <Eye className="w-3.5 h-3.5 text-slate-400" />
-                        <span>{video.views}</span>
-                      </span>
-                    )}
-                    {video.publishedAt && (
-                      <span className="text-slate-400">· {video.publishedAt}</span>
-                    )}
-                  </div>
+                {/* Action link */}
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-end text-xs text-slate-500">
                   <span className="text-[11px] font-semibold text-red-600 group-hover:translate-x-0.5 transition-transform">
                     보러가기 →
                   </span>
