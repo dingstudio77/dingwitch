@@ -28,13 +28,10 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </div>
 
             <div className="space-y-1.5 text-xs text-purple-200/80 leading-relaxed font-light">
-              <p className="font-medium text-white/90">상호명: 딩스튜디오 (Ding Studio)</p>
-              <p>대표 디렉터: 딩마녀</p>
-              <p>이메일: {STUDIO_INFO.email}</p>
-              <p>운영 시간: {STUDIO_INFO.operatingHours}</p>
-              <p className="pt-1 text-purple-300/60 text-[11px]">
-                사업자등록번호 및 통신판매업신고 완료
-              </p>
+              <p>업체명 : 딩스튜디오</p>
+              <p>대표자명 : 강은영</p>
+              <p>사업자번호 : 372-44-01102</p>
+              <p>사업장 주소 : 경기도 분당구 수내로 201</p>
             </div>
           </div>
         </div>
