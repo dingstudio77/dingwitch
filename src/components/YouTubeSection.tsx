@@ -81,17 +81,6 @@ export const YouTubeSection: React.FC<YouTubeSectionProps> = ({
 
           {/* Action buttons */}
           <div className="flex items-center gap-3 self-start sm:self-auto">
-            {onNavigate && (
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={() => onNavigate('youtube')}
-                className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs sm:text-sm font-bold transition-colors cursor-pointer"
-              >
-                <span>영상 전체보기 ({totalCount}편)</span>
-                <span>→</span>
-              </motion.button>
-            )}
             <motion.a
               id="youtube-channel-direct-link"
               href="https://www.youtube.com/@dingwitch7"
