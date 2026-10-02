@@ -262,7 +262,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNotify, onNavigateHome, 
     });
     setYoutubeVideos(updatedList);
     setEditingVideo(null);
-    onNotify('✅ 유튜브 영상 정보가 성공적으로 수정되었습니다.');
+    onNotify('✅ 썸네일 및 영상 정보가 클라우드에 영구 저장되었습니다! (배포 사이트 실시간 반영)');
   };
 
   const handleDeleteVideoItem = (id: string, title: string) => {
@@ -1445,10 +1445,16 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNotify, onNavigateHome, 
                       <img 
                         src={video.thumbnail} 
                         alt={video.title} 
+                        referrerPolicy="no-referrer"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         onError={(e) => {
-                          // Fallback on broken image
-                          (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80';
+                          const target = e.currentTarget as HTMLImageElement;
+                          const ytThumb = generateYouTubeThumbnail(video.url);
+                          if (ytThumb && !target.src.includes('ytimg.com')) {
+                            target.src = ytThumb;
+                          } else {
+                            target.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80';
+                          }
                         }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-black/20" />

@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
-import { Upload, Link2, Sparkles, Image as ImageIcon, X, Check, RefreshCw } from 'lucide-react';
+import { Upload, Link2, Sparkles, Image as ImageIcon, X, Check, RefreshCw, Zap } from 'lucide-react';
 import { extractYouTubeVideoId, generateYouTubeThumbnail } from '../utils/storage';
+import { compressThumbnailImage, CompressionResult } from '../utils/imageCompressor';
 
 interface ThumbnailUploaderProps {
   idPrefix: string;
@@ -17,38 +18,41 @@ export function ThumbnailUploader({
   videoUrl = '',
   onNotify,
 }: ThumbnailUploaderProps) {
-  const [tab, setTab] = useState<'url' | 'file'>('url');
+  const [tab, setTab] = useState<'url' | 'file'>('file');
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [compressionStats, setCompressionStats] = useState<CompressionResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (file: File) => {
+  const handleFileChange = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       onNotify?.('이미지 파일(PNG, JPG, WebP)만 업로드할 수 있습니다.');
       return;
     }
 
-    // Check size limit: max 5MB
-    if (file.size > 5 * 1024 * 1024) {
-      onNotify?.('파일 크기는 최대 5MB까지 지원됩니다.');
-      return;
-    }
-
     setIsProcessing(true);
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const dataUrl = e.target?.result as string;
-      if (dataUrl) {
-        onChange(dataUrl);
-        onNotify?.('썸네일 이미지가 성공적으로 등록되었습니다.');
-      }
+    try {
+      // Automatically compress and resize to optimal 16:9 thumbnail (960x540, ~30KB - 50KB)
+      // This prevents document size limit exceptions in Firestore and LocalStorage quota errors
+      const result = await compressThumbnailImage(file, 960, 540, 0.82);
+      setCompressionStats(result);
+      onChange(result.dataUrl);
+      onNotify?.(`✨ 썸네일 고화질 최적화 완료! (${result.originalSizeKb}KB → ${result.compressedSizeKb}KB, 배포 후에도 안전 영구 보존)`);
+    } catch (err: any) {
+      console.error('Image compression error:', err);
+      // Fallback to direct read if canvas fails
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        if (dataUrl) {
+          onChange(dataUrl);
+          onNotify?.('썸네일 이미지가 등록되었습니다.');
+        }
+      };
+      reader.readAsDataURL(file);
+    } finally {
       setIsProcessing(false);
-    };
-    reader.onerror = () => {
-      setIsProcessing(false);
-      onNotify?.('이미지를 읽는 중 오류가 발생했습니다.');
-    };
-    reader.readAsDataURL(file);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -75,6 +79,7 @@ export function ThumbnailUploader({
     }
     const thumb = generateYouTubeThumbnail(videoUrl);
     if (thumb) {
+      setCompressionStats(null);
       onChange(thumb);
       onNotify?.('유튜브 고화질 썸네일을 자동으로 불러왔습니다!');
     } else {
@@ -104,6 +109,18 @@ export function ThumbnailUploader({
       <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl w-fit">
         <button
           type="button"
+          onClick={() => setTab('file')}
+          className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            tab === 'file'
+              ? 'bg-white text-purple-700 shadow-xs'
+              : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          <Upload className="w-3.5 h-3.5" />
+          <span>내 PC 파일 업로드 (자동 압축 최적화)</span>
+        </button>
+        <button
+          type="button"
           onClick={() => setTab('url')}
           className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
             tab === 'url'
@@ -114,46 +131,9 @@ export function ThumbnailUploader({
           <Link2 className="w-3.5 h-3.5" />
           <span>URL 링크 입력</span>
         </button>
-        <button
-          type="button"
-          onClick={() => setTab('file')}
-          className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-            tab === 'file'
-              ? 'bg-white text-purple-700 shadow-xs'
-              : 'text-slate-600 hover:text-slate-900'
-          }`}
-        >
-          <Upload className="w-3.5 h-3.5" />
-          <span>내 PC 파일 업로드</span>
-        </button>
       </div>
 
-      {/* Mode 1: URL input */}
-      {tab === 'url' && (
-        <div className="relative">
-          <input
-            id={`${idPrefix}-thumbnail-url`}
-            type="text"
-            required
-            placeholder="https://... 또는 유튜브 썸네일 주소"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-100 pr-10"
-          />
-          {value && (
-            <button
-              type="button"
-              onClick={() => onChange('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
-              title="지우기"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Mode 2: File upload dropzone */}
+      {/* Mode 1: File upload dropzone (Default) */}
       {tab === 'file' && (
         <div>
           <input
@@ -188,13 +168,41 @@ export function ThumbnailUploader({
                 )}
               </div>
               <p className="font-semibold text-slate-800 text-xs">
-                클릭하여 이미지 선택 또는 파일을 드래그앤드롭
+                {isProcessing ? '고화질 최적화 압축 중...' : '클릭하여 이미지 선택 또는 파일을 드래그앤드롭'}
               </p>
               <p className="text-[10px] text-slate-400">
-                PNG, JPG, WebP 권장 (16:9 비율 최적)
+                PNG, JPG, WebP (배포 후에도 깨지지 않도록 자동 고화질 최적화 보존됩니다)
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Mode 2: URL input */}
+      {tab === 'url' && (
+        <div className="relative">
+          <input
+            id={`${idPrefix}-thumbnail-url`}
+            type="text"
+            required
+            placeholder="https://... 또는 유튜브 썸네일 주소"
+            value={value}
+            onChange={(e) => {
+              setCompressionStats(null);
+              onChange(e.target.value);
+            }}
+            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-100 pr-10"
+          />
+          {value && (
+            <button
+              type="button"
+              onClick={() => onChange('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+              title="지우기"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       )}
 
@@ -205,26 +213,39 @@ export function ThumbnailUploader({
             <img
               src={value}
               alt="썸네일 미리보기"
+              referrerPolicy="no-referrer"
               className="w-full h-full object-cover"
               onError={(e) => {
-                (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80';
+                const fb = videoUrl ? generateYouTubeThumbnail(videoUrl) : '';
+                (e.currentTarget as HTMLImageElement).src = fb || 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80';
               }}
             />
           </div>
           <div className="flex-1 min-w-0 flex flex-col justify-between self-stretch py-0.5">
             <div>
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full mb-1">
-                <Check className="w-3 h-3" />
-                미리보기 확인 완료
-              </span>
+              <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                  <Check className="w-3 h-3" />
+                  미리보기 확인 완료
+                </span>
+                {compressionStats && (
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 bg-purple-100 px-2 py-0.5 rounded-full">
+                    <Zap className="w-3 h-3" />
+                    최적화 {compressionStats.originalSizeKb}KB → {compressionStats.compressedSizeKb}KB
+                  </span>
+                )}
+              </div>
               <p className="text-[11px] text-slate-600 truncate font-mono">
-                {value.startsWith('data:') ? '로컬 이미지 파일 (Base64)' : value}
+                {value.startsWith('data:') ? '클라우드 안전 최적화 이미지' : value}
               </p>
             </div>
             <div className="flex items-center gap-2 mt-1">
               <button
                 type="button"
-                onClick={() => onChange('')}
+                onClick={() => {
+                  setCompressionStats(null);
+                  onChange('');
+                }}
                 className="text-[11px] text-red-600 hover:text-red-700 font-semibold hover:underline flex items-center gap-0.5 cursor-pointer"
               >
                 <X className="w-3 h-3" />

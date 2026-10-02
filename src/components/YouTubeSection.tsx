@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Youtube, Play, ArrowUpRight, Clock } from 'lucide-react';
 import { motion } from 'motion/react';
 import { YouTubeVideoItem } from '../types';
-import { getYouTubeVideos } from '../utils/storage';
+import { getYouTubeVideos, generateYouTubeThumbnail } from '../utils/storage';
 
 interface YouTubeSectionProps {
   videos?: YouTubeVideoItem[];
@@ -117,7 +117,13 @@ export const YouTubeSection: React.FC<YouTubeSectionProps> = ({
                   alt={video.title}
                   referrerPolicy="no-referrer"
                   onError={(e) => {
-                    (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80';
+                    const target = e.currentTarget as HTMLImageElement;
+                    const ytThumb = generateYouTubeThumbnail(video.url);
+                    if (ytThumb && !target.src.includes('ytimg.com')) {
+                      target.src = ytThumb;
+                    } else {
+                      target.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80';
+                    }
                   }}
                   className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-500"
                 />

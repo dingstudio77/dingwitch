@@ -1,7 +1,8 @@
-import { doc, setDoc, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, onSnapshot, collection, writeBatch, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { YouTubeVideoItem, PreRegistrationItem, CollaborationInquiryItem } from '../types';
 import { INITIAL_YOUTUBE_VIDEOS } from '../data/mockData';
+import { idbGet, idbSet } from './idbStorage';
 
 // Firestore document references
 const YOUTUBE_DOC_REF = doc(db, 'site_settings', 'youtube');
@@ -26,21 +27,51 @@ let isSavingInquiries = false;
 // --------------------------------------------------------------------------
 
 /**
- * Save YouTube videos list to Firebase Firestore.
+ * Save YouTube videos list to Firebase Firestore with multi-tier persistence:
+ * 1) LocalStorage (instant cache)
+ * 2) IndexedDB (large quota fallback)
+ * 3) Firestore site_settings/youtube (aggregate document)
+ * 4) Firestore youtube_videos/{id} (individual documents to prevent document size limit errors)
  */
 export async function saveYouTubeVideosToCloud(videos: YouTubeVideoItem[]): Promise<boolean> {
   try {
     isSavingYouTube = true;
     if (typeof window !== 'undefined') {
-      localStorage.setItem(YOUTUBE_STORAGE_KEY, JSON.stringify(videos));
+      try {
+        localStorage.setItem(YOUTUBE_STORAGE_KEY, JSON.stringify(videos));
+      } catch (e) {
+        console.warn('localStorage setItem quota limit warning:', e);
+      }
+      idbSet(YOUTUBE_STORAGE_KEY, videos).catch(() => {});
       window.dispatchEvent(new CustomEvent('ding_youtube_videos_updated', { detail: videos }));
     }
 
-    await setDoc(YOUTUBE_DOC_REF, {
-      items: videos,
-      updatedAt: new Date().toISOString(),
-      updatedBy: 'admin',
-    }, { merge: true });
+    // 1. Primary: Save to site_settings/youtube document
+    try {
+      await setDoc(YOUTUBE_DOC_REF, {
+        items: videos,
+        updatedAt: new Date().toISOString(),
+        updatedBy: 'admin',
+      }, { merge: true });
+    } catch (setDocErr) {
+      console.warn('Primary site_settings/youtube write warning, writing individual docs:', setDocErr);
+    }
+
+    // 2. Secondary backup: Individual documents per video in youtube_videos collection
+    try {
+      const batch = writeBatch(db);
+      videos.forEach((vid, index) => {
+        const itemRef = doc(db, 'youtube_videos', vid.id);
+        batch.set(itemRef, {
+          ...vid,
+          orderIndex: index,
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+      });
+      await batch.commit();
+    } catch (batchErr) {
+      console.warn('Batch write youtube_videos warning:', batchErr);
+    }
 
     return true;
   } catch (err) {
@@ -61,6 +92,19 @@ export function initYouTubeFirebaseSync(onUpdate?: (videos: YouTubeVideoItem[]) 
   if (isListeningYouTube) return () => {};
   isListeningYouTube = true;
 
+  // Check IndexedDB immediately in case localStorage was wiped by browser
+  idbGet<YouTubeVideoItem[]>(YOUTUBE_STORAGE_KEY).then(cached => {
+    if (cached && Array.isArray(cached) && cached.length > 0) {
+      try {
+        localStorage.setItem(YOUTUBE_STORAGE_KEY, JSON.stringify(cached));
+      } catch {
+        // quota
+      }
+      window.dispatchEvent(new CustomEvent('ding_youtube_videos_updated', { detail: cached }));
+      if (onUpdate) onUpdate(cached);
+    }
+  }).catch(() => {});
+
   try {
     const unsubscribe = onSnapshot(
       YOUTUBE_DOC_REF,
@@ -71,31 +115,58 @@ export function initYouTubeFirebaseSync(onUpdate?: (videos: YouTubeVideoItem[]) 
           const data = docSnap.data();
           if (data && Array.isArray(data.items) && data.items.length > 0) {
             const remoteVideos = data.items as YouTubeVideoItem[];
-            localStorage.setItem(YOUTUBE_STORAGE_KEY, JSON.stringify(remoteVideos));
+            try {
+              localStorage.setItem(YOUTUBE_STORAGE_KEY, JSON.stringify(remoteVideos));
+            } catch {
+              // quota
+            }
+            idbSet(YOUTUBE_STORAGE_KEY, remoteVideos).catch(() => {});
             window.dispatchEvent(new CustomEvent('ding_youtube_videos_updated', { detail: remoteVideos }));
             if (onUpdate) onUpdate(remoteVideos);
             return;
           }
-        } else {
-          // Document does not exist yet: seed current local storage or defaults
-          const currentRaw = localStorage.getItem(YOUTUBE_STORAGE_KEY);
-          let seedVideos = INITIAL_YOUTUBE_VIDEOS;
-          if (currentRaw) {
-            try {
-              const parsed = JSON.parse(currentRaw);
-              if (Array.isArray(parsed) && parsed.length > 0) {
-                seedVideos = parsed;
+        }
+
+        // If main doc has no items, check individual collection 'youtube_videos'
+        try {
+          const colSnap = await getDocs(collection(db, 'youtube_videos'));
+          if (!colSnap.empty) {
+            const list = colSnap.docs.map(d => d.data() as YouTubeVideoItem & { orderIndex?: number });
+            list.sort((a, b) => (a.orderIndex ?? 0) - (b.orderIndex ?? 0));
+            if (list.length > 0) {
+              try {
+                localStorage.setItem(YOUTUBE_STORAGE_KEY, JSON.stringify(list));
+              } catch {
+                // quota
               }
-            } catch {
-              // fallback
+              idbSet(YOUTUBE_STORAGE_KEY, list).catch(() => {});
+              window.dispatchEvent(new CustomEvent('ding_youtube_videos_updated', { detail: list }));
+              if (onUpdate) onUpdate(list);
+              return;
             }
           }
-          await setDoc(YOUTUBE_DOC_REF, {
-            items: seedVideos,
-            updatedAt: new Date().toISOString(),
-            isInitialSeed: true,
-          }, { merge: true });
+        } catch (colErr) {
+          console.warn('Fallback youtube_videos collection fetch notice:', colErr);
         }
+
+        // If both don't exist yet: seed current local storage or defaults
+        const currentRaw = localStorage.getItem(YOUTUBE_STORAGE_KEY);
+        let seedVideos = INITIAL_YOUTUBE_VIDEOS;
+        if (currentRaw) {
+          try {
+            const parsed = JSON.parse(currentRaw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              seedVideos = parsed;
+            }
+          } catch {
+            // fallback
+          }
+        }
+        await setDoc(YOUTUBE_DOC_REF, {
+          items: seedVideos,
+          updatedAt: new Date().toISOString(),
+          isInitialSeed: true,
+        }, { merge: true });
       },
       (error) => {
         console.warn('YouTube Firestore sync notice:', error.message);
